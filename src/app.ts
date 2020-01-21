@@ -5,6 +5,8 @@ import {triangle} from './geometry'
 import {vertexShaderGLSL,fragmentShaderGLSL} from './shader'
 import * as cube from './cube'
 
+/////////// DRAWS AN SET OF TRIANGLES IN AN INSTANCED MANNER ///////////////
+
 if(!navigator.gpu){
     alert("Your browser doesn't currently support webgpu.");
 }
@@ -104,6 +106,9 @@ function start(device,spirv){
     });
        // ==================== CALCULATE SEPARATE MATRICES PER-INSTANCE======================== //
 
+        // this seems to be around the upper limit of a Macbook pro w/ a Radeon Pro 555 2 GB, 
+        // not sure if this is a GPU, implementation, or execution issue. 
+        // (guessing I just didn't do things right, samples found so far show to set up separate Projection/View/Model matrices for each instance
        let numInstances = 1600;
 
        let instanceData = [];
