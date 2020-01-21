@@ -17,5 +17,20 @@ After you download
 Notes
 ===
 * In safari, context string is just "gpu"
-* In safari "setSubData" on GPUBuffer is not defined
+* In safari "setSubData" on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. 
+```javascript 
+
+// from Hello triangle sample here 
+// https://webkit.org/demos/webgpu/hello-triangle.html
+ const vertexArrayBuffer = await vertexBuffer.mapWriteAsync();
+    const vertexWriteArray = new Float32Array(vertexArrayBuffer);
+    vertexWriteArray.set([
+        // x, y, z, w, r, g, b, a
+        0, 0.8, 0, 1, 0, 1, 1, 1,
+        -0.8, -0.8, 0, 1, 1, 1, 0, 1,
+        0.8, -0.8, 0, 1, 1, 0, 1, 1
+    ]);
+    vertexBuffer.unmap();
+    
+    ```
  
