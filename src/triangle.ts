@@ -5,6 +5,9 @@ import {triangle} from './geometry'
 import {vertexShaderGLSL,fragmentShaderGLSL} from './shader'
 import * as cube from './cube'
 
+
+// =========== DRAWS A TRIANGLE ========= // 
+
 if(!navigator.gpu){
     alert("Your browser doesn't currently support webgpu.");
 }
