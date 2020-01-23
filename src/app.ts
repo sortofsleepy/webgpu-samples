@@ -1,15 +1,23 @@
+import cubeSample from './samples/cube/app'
+
+
 import glsl from './glslang.js'
 import mat4 from './mat4'
 import vec3 from './vec3'
-import {triangle} from './geometry'
 import {vertexShaderGLSL,fragmentShaderGLSL} from './shader'
-import * as cube from './cube'
+import { getContextType } from './utils.js'
+import createPlane from './geometry/plane'
 
-/////////// DRAWS AN SET OF TRIANGLES IN AN INSTANCED MANNER ///////////////
+import vertex from './samples/texture/vertex.glsl'
+import fragment from './samples/texture/fragment.glsl'
 
 if(!navigator.gpu){
-    alert("Your browser doesn't currently support webgpu.");
+    alert("Unable to start - your browser doesn't support WebGPU")
+    throw new Error("Your browser does not support WebGPU");
 }
+
+
+
 
 navigator.gpu.requestAdapter().then(res => {
     res.requestDevice().then(device => {
@@ -24,61 +32,32 @@ navigator.gpu.requestAdapter().then(res => {
     })
 })
 
-function getTransformationMatrix(projectionMatrix){
-    let viewMatrix = mat4.create();
-    mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -5));
-    let now = Date.now() / 1000;
-    mat4.rotate(viewMatrix, viewMatrix, 1, vec3.fromValues(Math.sin(now), Math.cos(now), 0));
-
-    let modelViewProjectionMatrix = mat4.create();
-    mat4.multiply(modelViewProjectionMatrix, projectionMatrix, viewMatrix);
-
-    return modelViewProjectionMatrix;
-}
 
 function start(device,spirv){
 
+    //========== SETUP ============== //
+  
     const canvas = document.createElement("canvas");
-    const context = canvas.getContext("gpupresent");
+    const context = canvas.getContext(getContextType());
+
     const projectionMatrix = mat4.create();
+    let viewMatrix = mat4.create();
+
 
     const aspect = Math.abs(canvas.width / canvas.height);
-    mat4.perspective(projectionMatrix, (2* Math.PI) / 5, aspect, 1, 1000.0);
+    mat4.perspective(projectionMatrix, (2 * Math.PI) / 5, aspect, 0.1, 1000000.0);
 
 
     document.body.appendChild(canvas);
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // ==================== BUILD CORE COMPONENTS  ======================== //
-  
+     
     // build swapchain 
     const swapChain = context.configureSwapChain({
         device,
         format: "bgra8unorm"
     });
-
-
-    // ==================== BUILD VERTEX BUFFER ======================== //
-    // build buffer for vertices 
-  
-   
-    /*
-     const verticesBuffer = device.createBuffer({
-        size:cube.cubeVertexArray.byteLength,
-        usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    })
-
-
-    verticesBuffer.setSubData(0,cube.cubeVertexArray);
-    */
-    const verticesBuffer = device.createBuffer({
-        size:triangle.vertices.byteLength,
-        usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-    })
-
-
-    verticesBuffer.setSubData(0,triangle.vertices);
 
     // ==================== BUILD UNIFORM BUFFER ======================== //
     const uniformsBindGroupLayout = device.createBindGroupLayout({
@@ -104,90 +83,30 @@ function start(device,spirv){
             },
         }],
     });
-       // ==================== CALCULATE SEPARATE MATRICES PER-INSTANCE======================== //
 
-        // this seems to be around the upper limit of a Macbook pro w/ a Radeon Pro 555 2 GB, 
-        // not sure if this is a GPU, implementation, or execution issue. 
-        // (guessing I just didn't do things right, samples found so far show to set up separate Projection/View/Model matrices for each instance
-       let numInstances = 1600;
+    // ========= IMAGE TEXTURE ========== //
 
-       let instanceData = [];
-       for(let i = 0; i < numInstances; ++i){
-           instanceData.push(
-               Math.random(),
-               Math.random(),
-               Math.random()
-           )
-       }
-   
-       let _instanceData = new Float32Array(instanceData);
-   
-       const instanceBuffer = device.createBuffer({
-           size: _instanceData.byteLength,
-           usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-       })
-   
-   
-       instanceBuffer.setSubData(0,_instanceData);
-    // ==================== BUILD GRAPHICS PIPELINE  ======================== //
-    const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [uniformsBindGroupLayout] });
-    const pipeline = device.createRenderPipeline({
-        layout: pipelineLayout,
+    let img = new Image();
+    img.src = "test.png";
+    img.decode();
 
-        vertexStage: {
-            module: device.createShaderModule({
-                code: spirv.compileGLSL(vertexShaderGLSL, "vertex"),
-                source: vertexShaderGLSL
-            }),
-            entryPoint: "main"
+    img.onload = () => {
+  
+    }
+
+    let tex = device.createTexture({
+        size:{
+            width:img.width,
+            height:img.height,
+            depth:1
         },
-        fragmentStage: {
-            module: device.createShaderModule({
-                code: spirv.compileGLSL(fragmentShaderGLSL, "fragment"),
-                source: fragmentShaderGLSL
-            }),
-            entryPoint: "main"
-        },
+        format:"rgba8unorm",
+        usage:GPUTextureUsage.COPY_DST | GPUTextureUsage.SAMPLED
+    })
 
-        primitiveTopology: "triangle-list",
-        depthStencilState: {
-            depthWriteEnabled: true,
-            depthCompare: "less",
-            format: "depth24plus-stencil8",
-        },
-        vertexState: {
-            vertexBuffers: [{
-                arrayStride: triangle.vertexSize,
-                attributes: [{
-                        // position
-                        shaderLocation: 0,
-                        offset: 0,
-                        format: "float2"
-                    }
-                ]
-            },{
-                arrayStride: 3 * 4,
-                attributes:[{
-                        // position
-                        shaderLocation: 1,
-                        offset: 0,
-                        format: "float3"
-                }]
-            }],
-        },
-
-        rasterizationState: {
-            cullMode: 'none',
-        },
-
-        colorStates: [{
-            format: "bgra8unorm",
-        }],
-    });
-
-    // ==================== BUILD RENDERPASS ================= //
-    // build required depth texture
-    const depthTexture = device.createTexture({
+    //=============== DEPTH SETTINGS  ================= //
+      // build required depth texture
+      const depthTexture = device.createTexture({
         size: {
             width: canvas.width,
             height: canvas.height,
@@ -214,13 +133,105 @@ function start(device,spirv){
             stencilStoreOp: "store",
         }
     };
+
+
+    // ========== BUILD GEOMETRY ============== //
+    let p = createPlane(500,500,2,2,);
+
+    
+    // build position buffer 
+
+    let vertices = device.createBuffer({
+        size:p.positions.byteLength,
+        usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    });
+
+    vertices.setSubData(0,p.positions);
  
 
-    // ==================== ANIMATE ======================== //
-    function getTransformationMatrix() {
-        let viewMatrix = mat4.create();
-        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -5));
+    // build uv buffer 
+    let uvs = device.createBuffer({
+        size:p.uvs.byteLength,
+        usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+    })
+
+    uvs.setSubData(0,p.uvs);
+
+
+    // build index buffer 
+    let indices = device.createBuffer({
+        size:p.cells.byteLength,
+        usage:GPUBufferUsage.INDEX | GPUBufferUsage.COPY_DST
+    })
+    indices.setSubData(0,p.cells);
+
+    let indexCount = p.cells.length;
+    // =============== BUILD SHADER ================== //
+    let vertexStage = {
+        module: device.createShaderModule({
+            code: spirv.compileGLSL(vertex, "vertex"),
+            source: vertex
+        }),
+        entryPoint: "main"
+    };
+
+    let fragmentStage = {
+        module: device.createShaderModule({
+            code: spirv.compileGLSL(fragment, "fragment"),
+            source: fragment
+        }),
+        entryPoint: "main"
+    }
+
+    //============== BUILD RENDER PIPELINE ================ //
+    const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [uniformsBindGroupLayout] });
+    const pipeline = device.createRenderPipeline({
+        layout: pipelineLayout,
+
+        vertexStage:vertexStage,
+        fragmentStage: fragmentStage,
+
+        primitiveTopology: "triangle-list",
+        depthStencilState: {
+            depthWriteEnabled: true,
+            depthCompare: "less",
+            format: "depth24plus-stencil8",
+        },
+
+        vertexState: {
+            indexFormat:"uint32",
+            vertexBuffers: [{
+                arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+                attributes: [{
+                    // position
+                    shaderLocation: 0,
+                    offset: 0,
+                    format: "float3"
+                },
+                    {
+                        shaderLocation:1,
+                        offset:0,
+                        format:"float2"
+                    }
+                ]
+            }],
+        },    
+        rasterizationState: {
+            cullMode: 'none',
+        },
+
+        colorStates: [{
+            format: "bgra8unorm",
+        }],
+    });
+
+    // ============== ANIMATE ============ //
+    let  getTransformationMatrix = ()=> {
+        //let viewMatrix = mat4.create();
+        viewMatrix = mat4.create();
+        mat4.translate(viewMatrix, viewMatrix, vec3.fromValues(0, 0, -1000));
         let now = Date.now() / 1000;
+
 
         mat4.rotate(viewMatrix, viewMatrix, 1, vec3.fromValues(Math.sin(now), Math.cos(now), 0));
 
@@ -231,8 +242,6 @@ function start(device,spirv){
     }
 
 
-
-    
     let animate = () => {
         requestAnimationFrame(animate);
         uniformBuffer.setSubData(0, getTransformationMatrix());
@@ -242,14 +251,17 @@ function start(device,spirv){
         const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
         passEncoder.setPipeline(pipeline);
         passEncoder.setBindGroup(0, uniformBindGroup);
-        passEncoder.setVertexBuffer(0, verticesBuffer);
-        passEncoder.setVertexBuffer(1, instanceBuffer);
-        passEncoder.draw(3 * numInstances, numInstances, 0, 0);
+
+        passEncoder.setVertexBuffer(0, vertices);
+        passEncoder.setVertexBuffer(1,uvs);
+        passEncoder.setIndexBuffer(indices);
+     
+        passEncoder.drawIndexed(p.positions.length ,1,0,0,0);
         passEncoder.endPass();
 
         device.defaultQueue.submit([commandEncoder.finish()]);
-
     }
 
     animate();
-}
+
+} // end start

@@ -5,8 +5,8 @@ export const cubeUVOffset = 4 * 8;
 
 
 export const cubeVertexArray = new Float32Array([
-    // float4 position, float4 color, float2 uv,
-    1, -1, 1, 1,  
+    // float4 position
+     1, -1, 1, 1,  
     -1, -1, 1, 1,  
     -1, -1, -1, 1, 
     1, -1, -1, 1,  

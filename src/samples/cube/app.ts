@@ -1,12 +1,10 @@
-import glsl from './glslang.js'
-import mat4 from './mat4'
-import vec3 from './vec3'
-import {triangle} from './geometry'
-import {vertexShaderGLSL,fragmentShaderGLSL} from './shader'
-import * as cube from './cube'
+import glsl from '../../glslang.js'
+import mat4 from '../../mat4'
+import vec3 from '../../vec3'
+import {vertexShaderGLSL,fragmentShaderGLSL} from '../../shader'
+import * as cube from '../../geometry/cube'
 
-
-// =========== DRAWS A TRIANGLE ========= // 
+export default function(){
 
 if(!navigator.gpu){
     alert("Your browser doesn't currently support webgpu.");
@@ -64,22 +62,13 @@ function start(device,spirv){
     // build buffer for vertices 
   
    
-    /*
-     const verticesBuffer = device.createBuffer({
+    const verticesBuffer = device.createBuffer({
         size:cube.cubeVertexArray.byteLength,
         usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
     })
 
 
     verticesBuffer.setSubData(0,cube.cubeVertexArray);
-    */
-   const verticesBuffer = device.createBuffer({
-    size:triangle.vertices.byteLength,
-    usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
-})
-
-
-verticesBuffer.setSubData(0,triangle.vertices);
 
     // ==================== BUILD UNIFORM BUFFER ======================== //
     const uniformsBindGroupLayout = device.createBindGroupLayout({
@@ -106,6 +95,8 @@ verticesBuffer.setSubData(0,triangle.vertices);
         }],
     });
     // ==================== BUILD GRAPHICS PIPELINE  ======================== //
+    const test = new Float32Array([1,1,1,1])
+    const size = test.byteLength / 4;
     const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [uniformsBindGroupLayout] });
     const pipeline = device.createRenderPipeline({
         layout: pipelineLayout,
@@ -133,16 +124,17 @@ verticesBuffer.setSubData(0,triangle.vertices);
         },
         vertexState: {
             vertexBuffers: [{
-                arrayStride: triangle.vertexSize,
+                arrayStride: size * 4,
                 attributes: [{
                     // position
                     shaderLocation: 0,
                     offset: 0,
-                    format: "float2"
+                    format: "float4"
                 }
 ]
             }],
         },
+        
 
         rasterizationState: {
             cullMode: 'back',
@@ -220,4 +212,5 @@ verticesBuffer.setSubData(0,triangle.vertices);
     }
 
     animate();
+}
 }

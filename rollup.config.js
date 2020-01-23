@@ -1,6 +1,6 @@
 import typescript from 'rollup-plugin-typescript'
 import compiler from '@ampproject/rollup-plugin-closure-compiler'
-
+import {string} from 'rollup-plugin-string'
 export default {
     input:'./src/app.ts',
     output:[
@@ -11,6 +11,10 @@ export default {
         }
     ],
     plugins:[
+        string({
+            include:"src/**/*.glsl",
+            exclude:[]
+        }),
         typescript(),
         compiler()
     ]

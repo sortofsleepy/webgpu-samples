@@ -16,5 +16,8 @@
     "rollup-plugin-typescript": "^1.0.0",
     "tslib": "^1.9.3",
     "typedoc": "^0.15.5"
+  },
+  "dependencies": {
+    "rollup-plugin-string": "^3.0.0"
   }
 }
