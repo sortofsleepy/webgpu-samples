@@ -1,7 +1,9 @@
 import glsl from '../../glslang.js'
 import mat4 from '../../mat4'
 import vec3 from '../../vec3'
-import {vertexShaderGLSL,fragmentShaderGLSL} from '../../shader'
+import vertex from './vertex.glsl'
+import fragment from './fragment.glsl'
+
 import * as cube from '../../geometry/cube'
 
 export default function(){
@@ -103,15 +105,15 @@ function start(device,spirv){
 
         vertexStage: {
             module: device.createShaderModule({
-                code: spirv.compileGLSL(vertexShaderGLSL, "vertex"),
-                source: vertexShaderGLSL
+                code: spirv.compileGLSL(vertex, "vertex"),
+                source: vertex
             }),
             entryPoint: "main"
         },
         fragmentStage: {
             module: device.createShaderModule({
-                code: spirv.compileGLSL(fragmentShaderGLSL, "fragment"),
-                source: fragmentShaderGLSL
+                code: spirv.compileGLSL(fragment, "fragment"),
+                source: fragment
             }),
             entryPoint: "main"
         },
