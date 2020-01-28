@@ -1,5 +1,5 @@
 # webgpu-samples
-just different webgpu experiments - mostly derived from existing code. 
+just different webgpu experiments - mostly derived from existing code. Nothing really different but more re-organizing and poking at different things to see what happens. 
 
 * [https://github.com/austinEng/webgpu-samples](https://github.com/austinEng/webgpu-samples)
 
@@ -8,16 +8,16 @@ To Run
 You need a browser with a WebGPU implmentation available. At the time of this writing the best is either the [Safari Technology Preview](https://developer.apple.com/safari/download/) or 
 [Chrome canary](https://www.google.com/chrome/canary/)
 
+That being said, these samples will probably only work with Chrome Canary as the implementation between Chrome and Safari is a little different.
+
 After you download 
 * In Chrome Canary you can find the setting behind chrome://flags
-* Currently only works in Canary
 
 
-
-Notes
+Notes on differeneces between Chrome / Safari - and other random stuff. 
 ===
-* In safari, context string is just "gpu"
-* In safari "setSubData" on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. 
+* In Safari, context string is just "gpu"
+* In Safari "setSubData" on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. 
 ```javascript 
 
 // from Hello triangle sample here 
