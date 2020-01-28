@@ -37,11 +37,11 @@ export async function loadImage(device:GPUDevice,src:string,onload:Function){
         const imageData = imageCanvasContext.getImageData(0, 0, img.width, img.height);
 
         let data = null;
-
         const rowPitch = Math.ceil(img.width * 4 / 256) * 256;
         if (rowPitch == img.width * 4) {
             data = imageData.data;
         } else {
+    
             data = new Uint8Array(rowPitch * img.height);
             let imagePixelIndex = 0;
             for (let y = 0; y < img.height; ++y) {
@@ -70,7 +70,7 @@ export async function loadImage(device:GPUDevice,src:string,onload:Function){
 
         let buffer= device.createBuffer({
             // TODO look this up again. 
-            size:data.byteLength * 4,
+            size:data.byteLength,
             usage:GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC
         });
         buffer.setSubData(0,data);
