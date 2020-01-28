@@ -1,5 +1,5 @@
 # webgpu-samples
-just different webgpu experiments - mostly derived from existing code. Nothing really different but more re-organizing and poking at different things to see what happens. 
+just different webgpu experiments - mostly derived from existing code linked below. Nothing really different but more re-organizing and poking at different things to see what happens. 
 
 * [https://github.com/austinEng/webgpu-samples](https://github.com/austinEng/webgpu-samples)
 
@@ -16,8 +16,16 @@ After you download
 
 Notes on differeneces between Chrome / Safari - and other random stuff. 
 ===
-* In Safari, context string is just "gpu"
-* In Safari "setSubData" on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. 
+* In Safari, context string is just "gpu" 
+```javascript 
+
+ let canvas = document.createElement("canvas");
+ let ctx = canvas.getContext("gpupresent") // chrome 
+ let ctx = canvas.getContext("gpu") // safari
+
+
+```
+* In Safari `setSubData` on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. 
 ```javascript 
 
 // from Hello triangle sample here 
