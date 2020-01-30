@@ -67,3 +67,6 @@ In the shader, reading the texture looks something like this.
 ```C
 vec4 color = texture(sampler2D(myTexture, mySampler), fragUV);
 ````
+
+Also it seems that it's no longer to possible to directly pass `Image` objects as texture data. Instead, you need to read the image information into a TypedArray, then convert that into a `GPUBuffer` object in order to send texture information. 
+See `loadImage()` in `utils.ts` for an example of how to do this. Note that the functin is basically taken directly from the source sample, some things about how it works is currently unclear. 
