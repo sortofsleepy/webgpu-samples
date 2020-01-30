@@ -14,6 +14,9 @@ After you download
 * In Chrome Canary you can find the setting behind chrome://flags
 
 
+[Current Spec can be found here](https://gpuweb.github.io/gpuweb/)
+====
+
 Notes on differeneces between Chrome / Safari - and other random stuff. 
 ===
 * In Safari, context string is just "gpu" 
@@ -25,7 +28,7 @@ Notes on differeneces between Chrome / Safari - and other random stuff.
 
 
 ```
-* In Safari `setSubData` on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. 
+* In Safari `setSubData` on GPUBuffer is not defined, looks like you might need to run the map functions based on this Safari snippit. Chrome should support mapping functions.
 ```javascript 
 
 // from Hello triangle sample here 
@@ -44,6 +47,8 @@ Notes on differeneces between Chrome / Safari - and other random stuff.
 
 
 * For vertex attributes while rendering, a stride is now required unlike previously in WebGL/OpenGL. It should usually be (num elements per vertex attribute) * (container type, ie Float32Array).byteLength
+
+* buffer size should follow the same pattern as above.
 
 * turning on instancing seems to be associated with setting the `stepMode` property on the attribute you would like to instance. 
 
