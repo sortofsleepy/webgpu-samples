@@ -40,8 +40,9 @@ Notes on differeneces between Chrome / Safari - and other random stuff.
     ]);
     vertexBuffer.unmap();
     
-    ```
- 
+```
+
+
 * For vertex attributes while rendering, a stride is now required unlike previously in WebGL/OpenGL. It should usually be <num elements per vertex attribute> * <container type, ie Float32Array>.byteLength
 
 * turning on instancing seems to be associated with setting the `stepMode` property on the attribute you would like to instance. 
