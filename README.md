@@ -53,3 +53,17 @@ Notes on differeneces between Chrome / Safari - and other random stuff.
 * turning on instancing seems to be associated with setting the `stepMode` property on the attribute you would like to instance. 
 
 * drawing indexed geometry requires setting the `indexFormat` property of the vertexState key in a renderpipeline. 
+
+Textures
+=====
+
+Textures are a little more complicated in WebGPU API. 
+
+You need 2 items per texture
+* A "sampler" object binding that essentially describes out to read a texture and contains settings for things like min/mag filter, clamping, etc. 
+* A texture binding in relation to the actual texture itself. 
+
+In the shader, reading the texture looks something like this. 
+```C
+vec4 color = texture(sampler2D(myTexture, mySampler), fragUV);
+````
