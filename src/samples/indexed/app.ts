@@ -120,7 +120,7 @@ function start(device,spirv){
     
     
         // ========== BUILD GEOMETRY ============== //
-        let p = plane(500,500,2,2,);
+        let p = plane(500,500,2,2,{});
     
 
         let positions = new Float32Array(p.positions);
@@ -130,13 +130,27 @@ function start(device,spirv){
         
         // build position buffer 
     
-        let vertices = device.createBuffer({
+        /*
+         let vertices = device.createBuffer({
             size:positions.byteLength,
             usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
         });
     
         vertices.setSubData(0,positions);
-     
+        */
+        const [vertices, positionBufferMap] = device.createBufferMapped({
+            size:positions.byteLength,
+            usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST
+        });
+
+        const positionData = new Float32Array(positionBufferMap);
+        for(let i = 0; i < positions.length; ++i){
+            positionData[i] = positions[i];
+        }
+        
+
+
+        vertices.unmap();
     
         // build uv buffer 
         let uvs = device.createBuffer({
@@ -145,7 +159,6 @@ function start(device,spirv){
         })
     
         uvs.setSubData(0,texCoords);
-    
     
         // build index buffer 
         let indices = device.createBuffer({

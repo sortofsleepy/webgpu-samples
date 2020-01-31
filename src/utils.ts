@@ -96,3 +96,48 @@ export async function loadImage(device:GPUDevice,src:string,onload:Function){
 
     })
 }
+
+export function setupCameraUniforms(device:GPUDevice){
+    const uniformsBindGroupLayout = device.createBindGroupLayout({
+        bindings: [
+            {
+                binding: 0,
+                visibility: GPUShaderStage.VERTEX,
+                type: "uniform-buffer"
+            }
+        ]
+    });
+
+
+    const uniformBufferSize = 128 // 2 4x4 matrix, 16 elements each multiplied by byte size which should usually be 4  
+    const uniformBuffer = device.createBuffer({
+        size: uniformBufferSize,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+    });
+
+
+    const uniformBindGroup = device.createBindGroup({
+        layout: uniformsBindGroupLayout,
+        bindings: [
+            {
+                binding: 0,
+                resource: {
+                    buffer: uniformBuffer
+                },
+            }
+    ],
+    });
+
+    return {
+        buffer:uniformBuffer,
+        bindGroup:uniformBindGroup,
+        bindGroupLayout:uniformsBindGroupLayout,
+        setProjection(mat:Array<any>){
+            this.buffer.setSubData(0,mat);
+        },
+        setViewMatrix(mat:Array<any>){
+            this.buffer.setSubData(64,mat);
+        }
+    }
+
+}
