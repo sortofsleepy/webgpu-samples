@@ -4,6 +4,7 @@ import mat4 from '../../mat4'
 import vec3 from '../../vec3'
 import {generateVertex,generateFragment, generateCompute} from './shaders'
 import {getContextType,setupCameraUniforms} from '../../utils'
+import glslang from '../../glslang.js'
 
 
 // attempt to re-create this via compute shaders
@@ -90,45 +91,32 @@ function start(device,spirv){
     
     // =========== BUILD POSITION VERTEX DATA ============= //
 
-    // BUilding double buffer backed data bufferes. 
-    let numParticles = 400;
-   
-    const [positionBufferA, positionBufferMap] = device.createBufferMapped({
-        size:16 * numParticles,
-        usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
-    });
+    let numParticles = 300;
 
-    const positionData = new Float32Array(positionBufferMap);
-    for(let i = 0; i < numParticles; i += 4){
-        
-        positionData[i]     = Math.floor(Math.random() * 25);
-        positionData[i + 1] = Math.floor(Math.random() * 25);
-        positionData[i + 2] = Math.floor(Math.random() * 25);
-        positionData[i + 3] = 128;
+    // build buffer data 
+    let bufferDataA = new Float32Array(numParticles);
+    let bufferDataB = new Float32Array(numParticles);
 
+    for(let i = 0; i < numParticles; ++i){
+        bufferDataA[i] = Math.random();
+        bufferDataB[i] = Math.random();
     }
-    positionBufferA.unmap();
 
-    // bundle second position buffer. 
-    const [positionBufferB, positionBufferMapB] = device.createBufferMapped({
-        size:16 * numParticles,
-        usage:GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
+    const simDataA = device.createBuffer({
+        size:bufferDataA.byteLength,
+        usage:GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
     });
+    simDataA.setSubData(0,bufferDataA);
 
-    const positionDataB = new Float32Array(positionBufferMapB);
-    for(let i = 0; i < numParticles; i += 4){
-        
-        positionDataB[i] = Math.random() + 0.4;
-        positionDataB[i + 1] = Math.random() + 0.5;
-        positionDataB[i + 2] = Math.random() + 0.5;
-        positionDataB[i + 3] = 0;
+    
+    const simDataB = device.createBuffer({
+        size:bufferDataB.byteLength,
+        usage:GPUBufferUsage.COPY_DST | GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
+    });
+    simDataB.setSubData(0,bufferDataB);
+    
 
-    }
-    positionBufferB.unmap();
-
-   
-
-    // =============== BUILD COMPUTE PIPELINE =================== 
+    // create bind group layout
     const computeBindGroupLayout = device.createBindGroupLayout({
         bindings:[
             {
@@ -144,61 +132,51 @@ function start(device,spirv){
         ]
     });
 
-    const computeBindGroupA2B = device.createBindGroup({
-        layout:computeBindGroupLayout,
-        bindings:[
-            {
-                binding:0,
-                resource:{
-                    buffer:positionBufferA
-                }
-            },
-            {
-                binding:1,
-                resource:{
-                    buffer:positionBufferB
-                }
-            }
-        ]
-    });
-
-    const computeBindGroupB2A = device.createBindGroup({
-        layout:computeBindGroupLayout,
-        bindings:[
-            {
-                binding:0,
-                resource:{
-                    buffer:positionBufferB
-                }
-            },
-            {
-                binding:1,
-                resource:{
-                    buffer:positionBufferA
-                }
-            }
-        ]
+    const computePipelineLayout = device.createPipelineLayout({
+        bindGroupLayouts:[computeBindGroupLayout]
     })
 
     const computePipeline = device.createComputePipeline({
-        layout:device.createPipelineLayout({
-            bindGroupLayouts:[computeBindGroupLayout]
-        }),
+
+        layout:computePipelineLayout,
         computeStage:{
             module:device.createShaderModule({
                 code:spirv.compileGLSL(generateCompute(numParticles),"compute")
             }),
             entryPoint:"main"
         }
-    })
 
+    });
 
+    // build the bind groups for the simulations. 
+    const simulationBindGroups = [1,1];
 
+    for(let i =0; i < 2; ++i){
+        simulationBindGroups[i] = device.createBindGroup({
+            layout:computeBindGroupLayout,
+            bindings:[{
+                binding:0,
+                resource:{
+                    buffer:simDataA,
+                    offset:0,
+                    size:simDataA.byteLength
+                }
+            },{
+                binding:1,
+                resource:{
+                    buffer:simDataB,
+                    offset:0,
+                    size:simDataB.byteLength
+                }
+            }]
+        })
+    }
 
     // ============= BUILD RENDER PIPELINE ==================== //
     const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [
         ubo.bindGroupLayout
     ] });
+
     const pipeline = device.createRenderPipeline({
         layout: pipelineLayout,
 
@@ -252,6 +230,7 @@ function start(device,spirv){
 
     // ========== ANIMATE THINGS =============== //
  
+    let t = 0;
     let animate = () => {
 
         requestAnimationFrame(animate);
@@ -263,16 +242,29 @@ function start(device,spirv){
 
         renderPassDescriptor.colorAttachments[0].attachment = swapChain.getCurrentTexture().createView();
 
-        const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
-        passEncoder.setPipeline(pipeline);
+        // ======= DO COMPUTE FIRST ========= //
+     
+        /*
+           const passEncoder = commandEncoder.beginComputePass();
+        passEncoder.setPipeline(computePipeline);
+        passEncoder.setBindGroup(0,simulationBindGroups[t %2]);
+        passEncoder.dispatch(numParticles);
 
-        passEncoder.setBindGroup(0,ubo.bindGroup);
-        passEncoder.setVertexBuffer(0,positionBufferA);
-        passEncoder.draw(1,numParticles,0,0);
         passEncoder.endPass();
+        */
+
+
+        //const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
+        //passEncoder.setPipeline(pipeline);
+
+        //passEncoder.setBindGroup(0,ubo.bindGroup);
+        //passEncoder.setVertexBuffer(0,positionBufferA);
+        //passEncoder.draw(1,numParticles,0,0);
+        //passEncoder.endPass();
 
         device.defaultQueue.submit([commandEncoder.finish()]);
 
+        t += 1;
     };
 
     animate();
